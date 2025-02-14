@@ -1,29 +1,36 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
+	"os"
+
+	// "strconv"
 	"time"
 )
 
 func main() {
 	http.HandleFunc("/api/process-file/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			file, _, _ := r.FormFile("file")
-			parts, _ := strconv.Atoi(r.FormValue("parts"))
+			file, header, _ := r.FormFile("file")
+			fmt.Println("File uploaded successfully", file)
+			// parts, _ := strconv.Atoi(r.FormValue("parts"))
 			readFile, _ := io.ReadAll(file)
-			words, vowels, alphabets, spaces, timeTaken := processFile(readFile, parts)
-			json.NewEncoder(w).Encode(map[string]any{"words": words, "vowels": vowels, "alphabets": alphabets, "spaces": spaces, "timeTaken": timeTaken})
-			// upload the file in uploads folder
 
+			// create a folder uploads if it does not exist
+			if _, err := os.Stat("uploads"); os.IsNotExist(err) {
+				os.Mkdir("uploads", 0755)
+			}
+			// write the file in uploads folder
+			print(header.Filename)
+			print(os.WriteFile("uploads/"+header.Filename, readFile, 0644))
+			// json.NewEncoder(w).Encode(map[string]any{"words": words, "vowels": vowels, "alphabets": alphabets, "spaces": spaces, "timeTaken": timeTaken})
 			return
 		}
 	})
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8000", nil); err != nil {
 		fmt.Println("Server error:", err)
 	}
 }
